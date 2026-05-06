@@ -248,8 +248,36 @@ final class MediaService
         $row['width'] = isset($row['width']) ? (int) $row['width'] : null;
         $row['height'] = isset($row['height']) ? (int) $row['height'] : null;
         $row['uploaded_by_admin_id'] = isset($row['uploaded_by_admin_id']) ? (int) $row['uploaded_by_admin_id'] : null;
+        $row['public_path'] = $this->canonicalPublicPath(
+            (string) ($row['public_path'] ?? ''),
+            (string) ($row['collection_key'] ?? ''),
+            (string) ($row['file_name'] ?? '')
+        );
 
         return $row;
+    }
+
+    private function canonicalPublicPath(string $publicPath, string $collectionKey, string $fileName): string
+    {
+        $normalized = trim(str_replace('\\', '/', $publicPath));
+
+        if ($normalized !== '' && preg_match('#^https?://#i', $normalized) === 1) {
+            $parsedPath = (string) (parse_url($normalized, PHP_URL_PATH) ?? '');
+            $normalized = $parsedPath !== '' ? $parsedPath : $normalized;
+        }
+
+        if ($normalized === '' || strpos($normalized, '/uploads/') !== 0) {
+            $collectionKey = $this->normalizeCollectionKey($collectionKey);
+            if ($collectionKey !== '' && $fileName !== '') {
+                return '/uploads/cms/' . $collectionKey . '/' . ltrim($fileName, '/');
+            }
+        }
+
+        if ($normalized !== '' && $normalized[0] !== '/') {
+            $normalized = '/' . $normalized;
+        }
+
+        return $normalized;
     }
 
     private function normalizeCollectionKey(string $collectionKey): string

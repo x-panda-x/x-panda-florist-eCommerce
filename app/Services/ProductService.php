@@ -991,20 +991,41 @@ final class ProductService
         $this->normalizeProductImageSortOrders($productId);
     }
 
-    public function productHasOrderReferences(int $productId): bool
+    /**
+     * @return array{total:int,order_items:int,customer_reminders:int}
+     */
+    public function productOrderReferenceBreakdown(int $productId): array
     {
         if ($productId <= 0) {
-            return false;
+            return ['total' => 0, 'order_items' => 0, 'customer_reminders' => 0];
         }
 
-        $row = $this->app->database()->query(
+        $orderItemsRow = $this->app->database()->query(
             'SELECT COUNT(*) AS total
              FROM order_items
              WHERE product_id = :product_id',
             ['product_id' => $productId]
         )->fetch();
+        $orderItemCount = (int) ($orderItemsRow['total'] ?? 0);
 
-        return (int) ($row['total'] ?? 0) > 0;
+        $reminderRow = $this->app->database()->query(
+            'SELECT COUNT(*) AS total
+             FROM customer_reminders
+             WHERE product_id = :product_id',
+            ['product_id' => $productId]
+        )->fetch();
+        $reminderCount = (int) ($reminderRow['total'] ?? 0);
+
+        return [
+            'total' => $orderItemCount + $reminderCount,
+            'order_items' => $orderItemCount,
+            'customer_reminders' => $reminderCount,
+        ];
+    }
+
+    public function productHasOrderReferences(int $productId): bool
+    {
+        return $this->productOrderReferenceBreakdown($productId)['total'] > 0;
     }
 
     public function deleteProduct(int $productId): void
@@ -1015,8 +1036,14 @@ final class ProductService
             throw new \RuntimeException('Product not found.');
         }
 
-        if ($this->productHasOrderReferences($productId)) {
-            throw new \RuntimeException('This product has order history and cannot be deleted.');
+        $referenceCounts = $this->productOrderReferenceBreakdown($productId);
+
+        if ($referenceCounts['total'] > 0) {
+            throw new \RuntimeException(sprintf(
+                'Blocked by order history references (order_items=%d, customer_reminders=%d).',
+                $referenceCounts['order_items'],
+                $referenceCounts['customer_reminders']
+            ));
         }
 
         $images = $this->listImagesByProductId($productId);
@@ -1026,6 +1053,14 @@ final class ProductService
         $pdo->beginTransaction();
 
         try {
+            $queryBuilder->delete('product_category_map', ['product_id' => $productId]);
+            $queryBuilder->delete('product_occasion_map', ['product_id' => $productId]);
+            $queryBuilder->delete('product_addon_map', ['product_id' => $productId]);
+            $queryBuilder->delete('product_related_map', ['product_id' => $productId]);
+            $queryBuilder->delete('product_related_map', ['related_product_id' => $productId]);
+            $queryBuilder->delete('product_images', ['product_id' => $productId]);
+            $queryBuilder->delete('product_variants', ['product_id' => $productId]);
+            $queryBuilder->delete('customer_reminders', ['product_id' => $productId]);
             $queryBuilder->delete('products', [
                 'id' => $productId,
             ]);

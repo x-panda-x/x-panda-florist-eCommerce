@@ -273,6 +273,59 @@ final class ProductController extends BaseAdminController
         $this->redirect('/admin/products');
     }
 
+    public function deleteSelected(): string
+    {
+        $this->requireAdmin();
+
+        if (!CSRF::validate($_POST['csrf_token'] ?? null)) {
+            $this->flash('error', 'The form session expired. Please try again.');
+            $this->redirect('/admin/products');
+        }
+
+        $productIds = $this->normalizeIds($_POST['product_ids'] ?? []);
+
+        if ($productIds === []) {
+            $this->flash('error', 'No products selected.');
+            $this->redirect('/admin/products');
+        }
+
+        $deleted = 0;
+        $blocked = 0;
+        $missing = 0;
+        $blockedMessages = [];
+
+        foreach ($productIds as $productId) {
+            if ($this->productService->findProductById($productId) === null) {
+                $missing++;
+                continue;
+            }
+
+            try {
+                $this->productService->deleteProduct($productId);
+                $deleted++;
+            } catch (\Throwable $exception) {
+                $blocked++;
+                $product = $this->productService->findProductById($productId);
+                $label = is_array($product) ? ((string) ($product['name'] ?? ('ID ' . $productId))) : ('ID ' . $productId);
+                $blockedMessages[] = $label . ': ' . $exception->getMessage();
+            }
+        }
+
+        if ($deleted > 0) {
+            $this->flash('success', sprintf('Deleted %d selected product(s).', $deleted));
+        }
+
+        if ($blocked > 0 || $missing > 0) {
+            $message = sprintf('Some selected products were not deleted (blocked: %d, missing: %d).', $blocked, $missing);
+            if ($blockedMessages !== []) {
+                $message .= ' ' . implode(' | ', $blockedMessages);
+            }
+            $this->flash('error', $message);
+        }
+
+        $this->redirect('/admin/products');
+    }
+
     /**
      * @param array<string, mixed> $product
      */

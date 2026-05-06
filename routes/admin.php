@@ -75,6 +75,7 @@ $router->get('/admin/products/edit', 'Admin\\ProductController@edit');
 $router->post('/admin/products', 'Admin\\ProductController@store');
 $router->post('/admin/products/update', 'Admin\\ProductController@update');
 $router->post('/admin/products/delete', 'Admin\\ProductController@delete');
+$router->post('/admin/products/delete-selected', 'Admin\\ProductController@deleteSelected');
 $router->get('/admin/orders', 'Admin\\OrderController@index');
 $router->get('/admin/orders/view', 'Admin\\OrderController@show');
 $router->get('/admin/orders/card-note', 'Admin\\OrderController@cardNote');
