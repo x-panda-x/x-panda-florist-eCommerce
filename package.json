@@ -1,0 +1,10 @@
+{
+  "name": "sheyda-florist",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build-time frontend tooling for the Sheyda Florist storefront scaffold.",
+  "scripts": {
+    "build": "echo \"Build pipeline placeholder\"",
+    "dev": "echo \"Development pipeline placeholder\""
+  }
+}

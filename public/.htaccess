@@ -1,0 +1,33 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always unset X-Powered-By
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Allow public static assets and uploads to be served directly.
+    RewriteRule ^assets/ - [L]
+    RewriteRule ^uploads/ - [L]
+
+    # Block the installer once installation has been completed.
+    RewriteCond %{REQUEST_URI} ^/install/install\.php$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/../storage/install.lock -f
+    RewriteRule ^install/install\.php$ - [F,L]
+
+    # Block direct access to sensitive file types inside the public document root.
+    RewriteRule (^|/).+?\.(env|log|sql|bak|ini|phar|sh)$ - [F,L,NC]
+
+    # Allow direct access to real public files such as install/install.php before lock.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Route all other requests through the application front controller.
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>

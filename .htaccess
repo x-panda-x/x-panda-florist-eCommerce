@@ -1,0 +1,29 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always unset X-Powered-By
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+    RewriteRule ^(app|config|database|install|resources|routes|storage|views)(/|$) - [F,L,NC]
+
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+    RewriteCond %{REQUEST_URI} ^/install/install\.php$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/storage/install.lock -f
+    RewriteRule ^install/install\.php$ - [F,L]
+
+    RewriteRule (^|/).+?\.(env|log|sql|bak|ini|phar|sh)$ - [F,L,NC]
+
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>

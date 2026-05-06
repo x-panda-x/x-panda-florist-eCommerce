@@ -1,0 +1,53 @@
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Local config / credentials
+deployment/config.local.sh
+tests/*.local.php
+
+# Runtime and logs
+storage/logs/*.log
+storage/cache/sessions/*
+!storage/logs/.gitkeep
+!storage/cache/sessions/.gitkeep
+
+# Deployment temp/build artifacts
+deployment/.tmp/
+deployment/.build/
+
+# Backups, dumps, temp scripts
+*.sql
+*.dump
+*_backup*
+backup*/
+tmp_*.php
+audit_*.php
+audit_*.json
+clean_sheyda.php
+append_account_css.py
+extract_pdp_style.py
+update_layouts.py
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node / frontend tooling
+node_modules/
+dist/
+
+# Local ops metadata
+.codex/
+
+# Private deployment tooling
+deployment/
+
+# User-generated uploads and runtime lock
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/.htaccess
+storage/install.lock
